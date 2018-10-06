@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+#https://whoisds.com//whois-database/newly-registered-domains/2018-10-01.zip/nrd
+DB="new_domains.db"
+DN="domain-names"
+
+today="$(date -v -1d +"%Y-%m-%d")"
+curl "https://whoisds.com//whois-database/newly-registered-domains/$today.zip/nrd" -o $today.zip
+unzip -l $today.zip
+unzip $today.zip
+echo "*** CLEANING FILE"
+# cat $DN.txt |tr -s '\n' ','|rev|cut -c 2-|rev > $DN-clean.txt
+echo "*** CONVERTING TO CSV"
+./mkcsv.sh $DN.txt > $DN.csv 
+
+# IF DB DOESNT EXIST, MAKE IT
+if [ ! -e $DB ]; then
+    echo "*** DATABASE NOT FOUND. CREATING"
+    printf 'create table domains(id number, domain varchar(200));\n.mode csv\n.import domain-names.csv domains\n' | sqlite3 $DB
+
+    # sqlite3 $DB "create table domains(id number, domain varchar(200));"
+    # sqlite3 $DB ".mode csv"
+    # sqlite3 $DB ".import domain-names.csv domains"
+else
+    echo "*** DATABASE FOUND."
+    sqlite3 $DB ".import domain-names.csv domains"
+    du -hs $DB
+fi
+
+# IF SQLITE DB EXISTS USE THAT
+
+# clean up
+echo "*** CLEANING UP"
+read -p "Clean Files ?" -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]
+then
+    rm -v $today.zip
+    rm -v $DN.txt
+    rm -v $DN.csv
+    # rm -v $DN-clean.txt
+fi
