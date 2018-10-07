@@ -9,7 +9,6 @@ curl "https://whoisds.com//whois-database/newly-registered-domains/$today.zip/nr
 unzip -l $today.zip
 unzip $today.zip
 echo "*** CLEANING FILE"
-# cat $DN.txt |tr -s '\n' ','|rev|cut -c 2-|rev > $DN-clean.txt
 echo "*** CONVERTING TO CSV"
 cat $DN.txt|awk '{ print "0,", $1}' > $DN.csv
 
@@ -17,18 +16,12 @@ cat $DN.txt|awk '{ print "0,", $1}' > $DN.csv
 if [ ! -e $DB ]; then
     echo "*** DATABASE NOT FOUND. CREATING"
     printf 'create table domains(id number, domain varchar(200));\n.mode csv\n.import domain-names.csv domains\n' | sqlite3 $DB
-
-    # sqlite3 $DB "create table domains(id number, domain varchar(200));"
-    # sqlite3 $DB ".mode csv"
-    # sqlite3 $DB ".import domain-names.csv domains"
 else
+    # IF SQLITE DB EXISTS USE THAT
     echo "*** DATABASE FOUND."
     sqlite3 $DB ".import domain-names.csv domains"
     du -hs $DB
 fi
-
-# IF SQLITE DB EXISTS USE THAT
-
 # clean up
 echo "*** CLEANING UP"
 read -p "Clean Files ?" -n 1 -r
@@ -38,5 +31,4 @@ then
     rm -v $today.zip
     rm -v $DN.txt
     rm -v $DN.csv
-    # rm -v $DN-clean.txt
 fi
